@@ -23,7 +23,7 @@ class WP_AchievementGet {
 	/**
 	 * The custom post type string for achievements.
 	 */
-	const CPT_ACHIEVEMENT = 'achievementget-template';
+	const CPT_ACHIEVEMENT = 'achievement-template';
 
 	/**
 	 * Instantiate, if necessary, and add hooks.
@@ -69,24 +69,45 @@ class WP_AchievementGet {
 		);
 
 		$this->user_id = get_current_user_id();
-		$this->user_meta = get_user_meta( $user_id, self::DOMAIN . '_user_meta' );
+		$this->user_meta = get_user_meta( $this->user_id, self::DOMAIN . '_user_meta' );
 	}
 
 	/**
 	 * Add menu options to the dashboard, and meta boxes to the edit pages.
 	 */
 	public function add_admin_menu() {
-		add_menu_page(
+		$page = add_options_page(
 			esc_html__( 'Achievement Get!', self::DOMAIN ),
 			esc_html__( 'Achievement Get!', self::DOMAIN ),
-			'edit_posts',
-			self::DOMAIN . '_menu',
-			array( $this, 'generate_admin_page' )
+			'manage_options',
+			self::DOMAIN,
+			array( $this, 'plugin_settings_page' )
 		);
 	}
 
-	public function generate_admin_page() {
-
+	public function plugin_settings_page() {
+		$achievement_posts = new WP_Query( 'post_type=' . self::CPT_ACHIEVEMENT );
+?>
+<h1>Achievement Get!</h1>
+<h2>List of achievements</h2>
+<?php
+// The Loop
+if ( $achievement_posts->have_posts() ) {
+	echo '<ul>';
+	while ( $achievement_posts->have_posts() ) {
+		$achievement_posts->the_post();
+		echo '<li>' . get_the_title() . '</li>';
+	}
+	echo '</ul>';
+} else {
+	echo( '<p>No achievements found!</p>' );
+	// no posts found
+}
+/* Restore original Post Data */
+wp_reset_postdata();
+?>
+<h2>Most recent achievements awarded</h2>
+<?php
 	}
 
 	public function achievement_award( $atts ) {
