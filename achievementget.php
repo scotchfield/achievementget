@@ -91,20 +91,20 @@ class WP_AchievementGet {
 <h1>Achievement Get!</h1>
 <h2>List of achievements</h2>
 <?php
-// The Loop
-if ( $achievement_posts->have_posts() ) {
-	echo '<ul>';
-	while ( $achievement_posts->have_posts() ) {
-		$achievement_posts->the_post();
-		echo '<li>' . get_the_title() . '</li>';
-	}
-	echo '</ul>';
-} else {
-	echo( '<p>No achievements found!</p>' );
-	// no posts found
-}
-/* Restore original Post Data */
-wp_reset_postdata();
+
+		if ( $achievement_posts->have_posts() ) {
+			echo '<ul>';
+			while ( $achievement_posts->have_posts() ) {
+				$achievement_posts->the_post();
+				echo '<li>' . get_the_title() . '</li>';
+			}
+			echo '</ul>';
+		} else {
+			echo( '<p>No achievements found! <a href="edit.php?post_type=' . self::CPT_ACHIEVEMENT . '">Care to add one?</a></p>' );
+		}
+
+		wp_reset_postdata();
+
 ?>
 <h2>Most recent achievements awarded</h2>
 <?php
