@@ -69,7 +69,7 @@ class WP_AchievementGet {
 		);
 
 		$this->user_id = get_current_user_id();
-		$this->user_meta = get_user_meta( $this->user_id, self::DOMAIN . '_user_meta' );
+		$this->user_meta = get_user_meta( $this->user_id, self::DOMAIN . '_user_meta', true );
 	}
 
 	/**
@@ -111,11 +111,30 @@ class WP_AchievementGet {
 	}
 
 	public function achievement_award( $atts ) {
-		// if user is not logged in, kick out
-		// if user has achievement, kick out
-		// award achievement by setting user_meta, and display html
+		// If the user is not logged in, we can't award an achievement.
+		if ( 0 === $this->user_id ) {
+			return '';
+		}
 
-		return '';
+		$achievement_id = $atts[ 'id' ];
+
+		// If the user already has the achievement, don't award again.
+		if ( isset( $this->user_meta[ $achievement_id ] ) ) {
+			return '';
+		}
+
+		$achievement_post = get_post( $achievement_id );
+
+		// The achievement (CPT) hasn't been defined yet, don't award.
+		if ( null === $achievement_post ) {
+			return '';
+		}
+
+		$achievement_time = current_time( 'timestamp', true );
+		$this->user_meta[ $achievement_id ] = $achievement_time;
+		update_user_meta( $this->user_id, self::DOMAIN . '_user_meta', $this->user_meta );
+
+		return '<div class="achievement_award"><h1>Achievement Awarded!</h1><h2>' . $achievement_post->post_title . '</h2></div>';
 	}
 
 	public function achievement_profile( $atts ) {
