@@ -137,20 +137,22 @@ class WP_AchievementGet {
 	}
 
 	public function achievement_profile( $atts ) {
+		global $wpdb;
+
 		// If the user is not logged in, we can't show their list of achievements.
 		if ( 0 === $this->user_id ) {
 			return '';
 		}
 
 		$achievement_names = array();
-		$achievement_posts = new WP_Query( 'post_type=' . self::CPT_ACHIEVEMENT );
 
-		// todo, we just need id and name, don't need the rest?
-		while ( $achievement_posts->have_posts() ) {
-			$achievement_posts->the_post();
-			$achievement_names[ get_the_ID() ] = get_the_title();
+		$results = $wpdb->get_results(
+			'SELECT id, post_title FROM wp_posts WHERE post_type="' . self::CPT_ACHIEVEMENT . '"',
+			ARRAY_A );
+
+		foreach ( $results as $result ) {
+			$achievement_names[ $result[ 'id' ] ] = $result[ 'post_title' ];
 		}
-		wp_reset_postdata();
 
 		$st = '<div class="achievement_profile"><ul>';
 		foreach ( $this->user_meta as $k => $v ) {
