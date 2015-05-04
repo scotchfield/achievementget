@@ -87,10 +87,9 @@ class WP_AchievementGet {
 
 	public function plugin_settings_page() {
 		$achievement_posts = new WP_Query( 'post_type=' . self::CPT_ACHIEVEMENT );
-?>
-<h1>Achievement Get!</h1>
-<h2>List of achievements</h2>
-<?php
+
+		echo '<h1>' . __( 'Achievement Get!', self::DOMAIN ) . '</h1>';
+		echo '<h2>' . __( 'List of achievements', self::DOMAIN ) . '</h2>';
 
 		if ( $achievement_posts->have_posts() ) {
 			echo '<ul>';
@@ -105,9 +104,7 @@ class WP_AchievementGet {
 
 		wp_reset_postdata();
 
-?>
-<h2>Most recent achievements awarded</h2>
-<?php
+		echo '<h2>' . __( 'Most recent achievements awarded' ) . '</h2>';
 	}
 
 	public function achievement_award( $atts ) {
@@ -134,7 +131,9 @@ class WP_AchievementGet {
 		$this->user_meta[ $achievement_id ] = $achievement_time;
 		update_user_meta( $this->user_id, self::DOMAIN . '_user_meta', $this->user_meta );
 
-		return '<div class="achievement_award"><h1>Achievement Awarded!</h1><h2>' . $achievement_post->post_title . '</h2></div>';
+		return '<div class="achievement_award"><h1>' .
+			__( 'Achievement Awarded!', self::DOMAIN ) . '</h1><h2>' .
+			$achievement_post->post_title . '</h2></div>';
 	}
 
 	public function achievement_profile( $atts ) {
