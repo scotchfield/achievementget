@@ -108,15 +108,23 @@ class WP_AchievementGet {
 	}
 
 	public function achievement_award( $atts ) {
-		// If the user is not logged in, we can't award an achievement.
-		if ( 0 === $this->user_id ) {
+		$user_id = $this->user_id;
+
+		if ( isset( $atts[ 'user_id' ] ) ) {
+			$user_id = intval( $atts[ 'user_id' ] );
+		}
+
+		// If we don't have a valid user id, we can't award an achievement.
+		if ( 0 === $user_id ) {
 			return '';
 		}
 
 		$achievement_id = $atts[ 'id' ];
 
+		$user_meta = get_user_meta( $user_id, self::DOMAIN . '_user_meta', true );
+
 		// If the user already has the achievement, don't award again.
-		if ( isset( $this->user_meta[ $achievement_id ] ) ) {
+		if ( isset( $user_meta[ $achievement_id ] ) ) {
 			return '';
 		}
 
@@ -128,8 +136,12 @@ class WP_AchievementGet {
 		}
 
 		$achievement_time = current_time( 'timestamp', true );
-		$this->user_meta[ $achievement_id ] = $achievement_time;
-		update_user_meta( $this->user_id, self::DOMAIN . '_user_meta', $this->user_meta );
+		$user_meta[ $achievement_id ] = $achievement_time;
+		update_user_meta( $user_id, self::DOMAIN . '_user_meta', $user_meta );
+
+		if ( $this->user_id === $user_id ) {
+			$this->user_meta = $user_meta;
+		}
 
 		return '<div class="achievement_award"><h1>' .
 			__( 'Achievement Awarded!', self::DOMAIN ) . '</h1><h2>' .
