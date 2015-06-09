@@ -42,6 +42,10 @@ class WP_AchievementGet {
 		add_shortcode( 'achievement_profile', array( $this, 'achievement_profile' ) );
 	}
 
+	public static function get_instance() {
+		return self::$instance;
+	}
+
 	/**
 	 * Initialize custom types.
 	 */
@@ -70,6 +74,7 @@ class WP_AchievementGet {
 
 		$this->user_id = get_current_user_id();
 		$this->user_meta = get_user_meta( $this->user_id, self::DOMAIN . '_user_meta', true );
+		$this->user_points = get_user_meta( $this->user_id, self::DOMAIN . '_points', true );
 	}
 
 	/**
@@ -86,21 +91,19 @@ class WP_AchievementGet {
 	}
 
 	public function plugin_settings_page() {
-		$achievement_posts = new WP_Query( 'post_type=' . self::CPT_ACHIEVEMENT );
+		global $wpdb;
+
+		$post_obj = $wpdb->get_results(
+			'SELECT * FROM wp_posts WHERE post_type=\'' . self::CPT_ACHIEVEMENT . '\' ORDER BY post_title', ARRAY_A );
 
 		echo '<h1>' . __( 'Achievement Get!', self::DOMAIN ) . '</h1>';
 		echo '<h2>' . __( 'List of achievements', self::DOMAIN ) . '</h2>';
 
-		if ( $achievement_posts->have_posts() ) {
-			echo '<ul>';
-			while ( $achievement_posts->have_posts() ) {
-				$achievement_posts->the_post();
-				echo '<li>' . get_the_title() . '</li>';
-			}
-			echo '</ul>';
-		} else {
-			echo( '<p>No achievements found! <a href="edit.php?post_type=' . self::CPT_ACHIEVEMENT . '">Care to add one?</a></p>' );
+		echo( '<ul>' );
+		foreach ( $post_obj as $k => $post ) {
+			echo( '<li>' . $post[ 'post_title' ] . '</li>' );
 		}
+		echo( '</ul>' );
 
 		wp_reset_postdata();
 
@@ -108,7 +111,8 @@ class WP_AchievementGet {
 	}
 
 	public function achievement_award( $atts ) {
-		$user_id = $this->user_id;
+		$user_id = intval( $this->user_id );
+		$user_points = intval( $this->user_points );
 
 		if ( isset( $atts[ 'user_id' ] ) ) {
 			$user_id = intval( $atts[ 'user_id' ] );
@@ -119,29 +123,36 @@ class WP_AchievementGet {
 			return '';
 		}
 
-		$achievement_id = $atts[ 'id' ];
+		$achievement_id = intval( $atts[ 'id' ] );
+		$achievement_meta = isset( $atts[ 'meta' ] ) ? intval( $atts[ 'meta' ] ) : 0;
+		$achievement_points = isset( $atts[ 'points' ] ) ? intval( $atts[ 'points' ] ) : 0;
+		$achievement_key = $achievement_id . ':' . $achievement_meta;
 
 		$user_meta = get_user_meta( $user_id, self::DOMAIN . '_user_meta', true );
 
 		// If the user already has the achievement, don't award again.
-		if ( isset( $user_meta[ $achievement_id ] ) ) {
-			return '';
+		if ( isset( $user_meta[ $achievement_key ] ) ) {
+			return 'YOU GOT IT ALREADY';
 		}
 
 		$achievement_post = get_post( $achievement_id );
 
 		// The achievement (CPT) hasn't been defined yet, don't award.
 		if ( null === $achievement_post ) {
-			return '';
+			return 'DONT KNOW IT';
 		}
 
 		$achievement_time = current_time( 'timestamp', true );
-		$user_meta[ $achievement_id ] = $achievement_time;
+		$user_meta[ $achievement_key ] = $achievement_time;
 		update_user_meta( $user_id, self::DOMAIN . '_user_meta', $user_meta );
+		update_user_meta( $user_id, self::DOMAIN . '_points', $user_points + $achievement_points );
 
 		if ( $this->user_id === $user_id ) {
 			$this->user_meta = $user_meta;
+			$this->user_points = $user_points;
 		}
+
+		do_action( 'achievement_award', $achievement_post );
 
 		return '<div class="achievement_award"><h1>' .
 			__( 'Achievement Awarded!', self::DOMAIN ) . '</h1><h2>' .
