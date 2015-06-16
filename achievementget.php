@@ -93,21 +93,53 @@ class WP_AchievementGet {
 	public function plugin_settings_page() {
 		global $wpdb;
 
-		$post_obj = $wpdb->get_results(
-			'SELECT * FROM wp_posts WHERE post_type=\'' . self::CPT_ACHIEVEMENT . '\' ORDER BY post_title', ARRAY_A );
-
-		echo '<h1>' . __( 'Achievement Get!', self::DOMAIN ) . '</h1>';
-		echo '<h2>' . __( 'List of achievements', self::DOMAIN ) . '</h2>';
-
-		echo( '<ul>' );
-		foreach ( $post_obj as $k => $post ) {
-			echo( '<li>' . $post[ 'post_title' ] . '</li>' );
+		if ( isset( $_GET[ 'view_user_id' ] ) ) {
+			$user_id = intval( $_GET[ 'view_user_id' ] );
+			$meta = get_user_meta( $user_id, self::DOMAIN . '_user_meta', true );
+			print_r( $meta );
 		}
-		echo( '</ul>' );
 
-		wp_reset_postdata();
+		if ( isset( $_GET[ 'reset_user_id' ] ) ) {
+			$user_id = intval( $_GET[ 'reset_user_id' ] );
+			update_user_meta( $user_id, self::DOMAIN . '_user_meta', array() );
+			update_user_meta( $user_id, self::DOMAIN . '_points', 0 );
+		}
 
-		echo '<h2>' . __( 'Most recent achievements awarded' ) . '</h2>';
+		if ( isset( $_GET[ 'admin_form' ] ) ) {
+			if ( isset( $_GET[ 'admin_only' ] ) ) {
+				update_option( 'achievement_get_admin_only', 1 );
+
+			} else {
+				update_option( 'achievement_get_admin_only', 0 );
+			}
+		}
+
+		$admin_only = get_option( 'achievement_get_admin_only', 0 );
+
+
+?>
+
+<h1>Achievement Get!</h1>
+
+<form method="get">
+  <input type="hidden" name="page" value="<?php echo( $_GET[ 'page' ] ); ?>" />
+  <b>View achievements for user ID</b>: <input type="text" name="view_user_id" value="" />
+  <input name="view_form" type="submit">
+</form>
+
+<form method="get">
+  <input type="hidden" name="page" value="<?php echo( $_GET[ 'page' ] ); ?>" />
+  <b>Reset achievements for user ID</b>: <input type="text" name="reset_user_id" value="" />
+  <input name="reset_form" type="submit">
+</form>
+
+<form method="get">
+  <input type="hidden" name="page" value="<?php echo( $_GET[ 'page' ] ); ?>" />
+  <b>Award achievements only to administrators</b>: <input type="checkbox" name="admin_only" <?php echo( $admin_only == 1 ? 'checked ' : '' ); ?>/>
+  <input name="admin_form" type="submit">
+</form>
+
+<?php
 	}
 
 	public function achievement_award( $atts ) {
@@ -123,6 +155,12 @@ class WP_AchievementGet {
 			return '';
 		}
 
+		$admin_only = get_option( 'achievement_get_admin_only', 0 );
+
+		if ( $admin_only > 0 && ! current_user_can( 'manage_options' ) ) {
+			return '';
+		}
+
 		$achievement_id = intval( $atts[ 'id' ] );
 		$achievement_meta = isset( $atts[ 'meta' ] ) ? intval( $atts[ 'meta' ] ) : 0;
 		$achievement_points = isset( $atts[ 'points' ] ) ? intval( $atts[ 'points' ] ) : 0;
@@ -132,14 +170,14 @@ class WP_AchievementGet {
 
 		// If the user already has the achievement, don't award again.
 		if ( isset( $user_meta[ $achievement_key ] ) ) {
-			return 'YOU GOT IT ALREADY';
+			return '';
 		}
 
 		$achievement_post = get_post( $achievement_id );
 
 		// The achievement (CPT) hasn't been defined yet, don't award.
 		if ( null === $achievement_post ) {
-			return 'DONT KNOW IT';
+			return '';
 		}
 
 		$achievement_time = current_time( 'timestamp', true );
