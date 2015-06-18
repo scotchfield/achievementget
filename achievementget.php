@@ -29,21 +29,47 @@ class WP_AchievementGet {
 	 * Instantiate, if necessary, and add hooks.
 	 */
 	public function __construct() {
+		global $wpdb;
+
 		if ( isset( self::$instance ) ) {
 			wp_die( esc_html__( 'The WP_AchievementGet class has already been instantiated.', self::DOMAIN ) );
 		}
 
 		self::$instance = $this;
 
+		$this->table_name = $wpdb->prefix . 'achievement_get';
+
+		register_activation_hook( __FILE__, array( $this, 'install' ) );
+
 		add_action( 'init', array( $this, 'init' ), 1 );
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 
 		add_shortcode( 'achievement_award', array( $this, 'achievement_award' ) );
 		add_shortcode( 'achievement_profile', array( $this, 'achievement_profile' ) );
+
+		add_action( 'wp_ajax_hide_achievement_notify', array( $this, 'hide_achievement_notify' ) );
 	}
 
 	public static function get_instance() {
 		return self::$instance;
+	}
+
+	public function install() {
+		global $wpdb;
+
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$sql = "CREATE TABLE " . $this->table_name . " (
+			id bigint(20) NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) NOT NULL,
+			time TIMESTAMP NOT NULL,
+			seen BOOLEAN NOT NULL,
+			message TEXT NOT NULL,
+			UNIQUE KEY id (id)
+		) $charset_collate;";
+
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		dbDelta( $sql );
 	}
 
 	/**
@@ -192,9 +218,9 @@ class WP_AchievementGet {
 
 		do_action( 'achievement_award', $achievement_post );
 
-		return '<div class="achievement_award"><h1>' .
-			__( 'Achievement Awarded!', self::DOMAIN ) . '</h1><h2>' .
-			$achievement_post->post_title . '</h2></div>';
+		$award_html = apply_filters( 'achievement_award_filter', '', $achievement_post );
+
+		return $award_html;
 	}
 
 	public function achievement_profile( $atts ) {
@@ -222,6 +248,41 @@ class WP_AchievementGet {
 		$st .= '</ul></div>';
 
 		return $st;
+	}
+
+	public function get_notifications( $user_id ) {
+		global $wpdb;
+
+		$user_id = intval( $user_id );
+
+		$results_obj = $wpdb->get_results(
+			'SELECT * FROM ' . $this->table_name . ' WHERE user_id=' . $user_id . ' AND seen=0 ORDER BY time DESC',
+			ARRAY_A
+		);
+
+		return $results_obj;
+	}
+
+	public function hide_achievement_notify() {
+		global $wpdb;
+
+		if ( ! isset( $_GET[ 'notify_id' ] ) ) {
+			wp_die();
+		}
+
+		$id = intval( $_GET[ 'notify_id' ] );
+		$user_id = get_current_user_id();
+
+		$wpdb->update(
+			$this->table_name,
+			array( 'seen' => 1 ),
+			array(
+				'id' => $id,
+				'user_id' => $user_id
+			)
+		);
+
+		wp_die();
 	}
 
 }
