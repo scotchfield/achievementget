@@ -46,6 +46,7 @@ class WP_AchievementGet {
 
 		add_shortcode( 'achievement_award', array( $this, 'achievement_award' ) );
 		add_shortcode( 'achievement_profile', array( $this, 'achievement_profile' ) );
+		add_shortcode( 'achievement_points', array( $this, 'achievement_points' ) );
 
 		add_action( 'wp_ajax_hide_achievement_notify', array( $this, 'hide_achievement_notify' ) );
 	}
@@ -123,6 +124,8 @@ class WP_AchievementGet {
 			$user_id = intval( $_GET[ 'view_user_id' ] );
 			$meta = get_user_meta( $user_id, self::DOMAIN . '_user_meta', true );
 			print_r( $meta );
+
+			echo( $this->achievement_points( array( 'user_id' => $user_id ) ) );
 		}
 
 		if ( isset( $_GET[ 'reset_user_id' ] ) ) {
@@ -248,6 +251,16 @@ class WP_AchievementGet {
 		$st .= '</ul></div>';
 
 		return $st;
+	}
+
+	public function achievement_points( $atts ) {
+		if ( isset( $atts[ 'user_id' ] ) ) {
+			$user_id = intval( $atts[ 'user_id' ] );
+
+			$points = intval( get_user_meta( $user_id, self::DOMAIN . '_points' ) );
+
+			return $points;
+		}
 	}
 
 	public function get_notifications( $user_id ) {
