@@ -255,11 +255,17 @@ class WP_AchievementGet {
 
 	public function achievement_points( $atts ) {
 		if ( isset( $atts[ 'user_id' ] ) ) {
-			$user_id = intval( $atts[ 'user_id' ] );
 
+			$user_id = intval( $atts[ 'user_id' ] );
 			$points = intval( get_user_meta( $user_id, self::DOMAIN . '_points' ) );
+			return $points;
+
+		} else if ( get_current_user_id() > 0 ) {
+
+			$points = intval( get_user_meta( get_current_user_id(), self::DOMAIN . '_points' ) );
 
 			return $points;
+
 		}
 	}
 
