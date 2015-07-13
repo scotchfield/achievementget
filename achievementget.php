@@ -216,7 +216,7 @@ class WP_AchievementGet {
 
 		if ( $this->user_id === $user_id ) {
 			$this->user_meta = $user_meta;
-			$this->user_points = $user_points;
+			$this->user_points = $user_points + $achievement_points;
 		}
 
 		do_action( 'achievement_award', $achievement_post );
@@ -254,19 +254,20 @@ class WP_AchievementGet {
 	}
 
 	public function achievement_points( $atts ) {
+		$points = 0;
+
 		if ( isset( $atts[ 'user_id' ] ) ) {
 
 			$user_id = intval( $atts[ 'user_id' ] );
-			$points = intval( get_user_meta( $user_id, self::DOMAIN . '_points' ) );
-			return $points;
+			$points = get_user_meta( $user_id, self::DOMAIN . '_points', true );
 
 		} else if ( get_current_user_id() > 0 ) {
 
-			$points = intval( get_user_meta( get_current_user_id(), self::DOMAIN . '_points' ) );
-
-			return $points;
+			$points = get_user_meta( get_current_user_id(), self::DOMAIN . '_points', true );
 
 		}
+
+		return $points;
 	}
 
 	public function get_notifications( $user_id ) {
@@ -280,6 +281,21 @@ class WP_AchievementGet {
 		);
 
 		return $results_obj;
+	}
+
+	public function add_achievement_notify( $user_id, $time, $message ) {
+		global $wpdb;
+
+		$wpdb->insert(
+			$this->table_name,
+			array(
+				'user_id' => $user_id,
+				'time' => $time,
+				'seen' => 0,
+				'message' => $message,
+			),
+			array( '%d', '%s', '%d', '%s' )
+		);
 	}
 
 	public function hide_achievement_notify() {
