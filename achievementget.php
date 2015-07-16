@@ -16,6 +16,11 @@ class WP_AchievementGet {
 	private static $instance = null;
 
 	/**
+	 * Cache posts if we're checking multiple achievements on a single page
+	 */
+	//private $post_cache = array();
+
+	/**
 	 * The domain for localization.
 	 */
 	const DOMAIN = 'achievementget';
@@ -219,7 +224,7 @@ class WP_AchievementGet {
 			$this->user_points = $user_points + $achievement_points;
 		}
 
-		do_action( 'achievement_award', $achievement_post );
+		do_action( 'achievement_award', $achievement_post, $atts );
 
 		$award_html = apply_filters( 'achievement_award_filter', '', $achievement_post );
 
