@@ -18,7 +18,7 @@ class WP_AchievementGet {
 	/**
 	 * Cache posts if we're checking multiple achievements on a single page
 	 */
-	//private $post_cache = array();
+	private $post_cache = array();
 
 	/**
 	 * The domain for localization.
@@ -207,7 +207,10 @@ class WP_AchievementGet {
 			return '';
 		}
 
-		$achievement_post = get_post( $achievement_id );
+		if ( ! isset( $this->post_cache[ $achievement_id ] ) ) {
+			$this->post_cache[ $achievement_id ] = get_post( $achievement_id );
+		}
+		$achievement_post = $this->post_cache[ $achievement_id ];
 
 		// The achievement (CPT) hasn't been defined yet, don't award.
 		if ( null === $achievement_post ) {
