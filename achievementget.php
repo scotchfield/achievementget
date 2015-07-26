@@ -103,10 +103,6 @@ class WP_AchievementGet {
 				'rewrite' => true,
 			)
 		);
-
-		$this->user_id = get_current_user_id();
-		$this->user_meta = get_user_meta( $this->user_id, self::DOMAIN . '_user_meta', true );
-		$this->user_points = get_user_meta( $this->user_id, self::DOMAIN . '_points', true );
 	}
 
 	/**
@@ -177,12 +173,13 @@ class WP_AchievementGet {
 	}
 
 	public function achievement_award( $atts ) {
-		$user_id = intval( $this->user_id );
-		$user_points = intval( $this->user_points );
-
 		if ( isset( $atts[ 'user_id' ] ) ) {
 			$user_id = intval( $atts[ 'user_id' ] );
+		} else {
+			$user_id = get_current_user_id();
 		}
+
+		$user_points = intval( get_user_meta( $user_id, self::DOMAIN . '_points', true ) );
 
 		// If we don't have a valid user id, we can't award an achievement.
 		if ( 0 === $user_id ) {
@@ -222,11 +219,6 @@ class WP_AchievementGet {
 		update_user_meta( $user_id, self::DOMAIN . '_user_meta', $user_meta );
 		update_user_meta( $user_id, self::DOMAIN . '_points', $user_points + $achievement_points );
 
-		if ( $this->user_id === $user_id ) {
-			$this->user_meta = $user_meta;
-			$this->user_points = $user_points + $achievement_points;
-		}
-
 		do_action( 'achievement_award', $achievement_post, $atts );
 
 		$award_html = apply_filters( 'achievement_award_filter', '', $achievement_post );
@@ -237,9 +229,10 @@ class WP_AchievementGet {
 	public function achievement_profile( $atts ) {
 		global $wpdb;
 
-		// If the user is not logged in, we can't show their list of achievements.
-		if ( 0 === $this->user_id ) {
-			return '';
+		if ( isset( $atts[ 'user_id' ] ) ) {
+			$user_id = intval( $atts[ 'user_id' ] );
+		} else {
+			$user_id = get_current_user_id();
 		}
 
 		$achievement_names = array();
@@ -252,6 +245,7 @@ class WP_AchievementGet {
 			$achievement_names[ $result[ 'id' ] ] = $result[ 'post_title' ];
 		}
 
+		// TODO: Handle different user ids here, don't rely on local storage of metadata. Just get it!
 		$st = '<div class="achievement_profile"><ul>';
 		foreach ( $this->user_meta as $k => $v ) {
 			$st .= '<li><span class="achievement_name"><a href="?p=' . $k . '">' . $achievement_names[ $k ] . '</a></span>: <span class="achievement_time">' . date( 'F j, Y, g:ia', $v ) . '</span></li>';
@@ -326,6 +320,14 @@ class WP_AchievementGet {
 		);
 
 		wp_die();
+	}
+
+	public function get_achievement_points( $user_id ) {
+		return intval( get_user_meta( $user_id, self::DOMAIN . '_points', true ) );
+	}
+
+	public function set_achievement_points( $user_id, $points ) {
+		update_user_meta( $user_id, self::DOMAIN . '_points', $points );
 	}
 
 }
