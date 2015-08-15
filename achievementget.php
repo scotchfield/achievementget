@@ -56,10 +56,16 @@ class WP_AchievementGet {
 		add_action( 'wp_ajax_hide_achievement_notify', array( $this, 'hide_achievement_notify' ) );
 	}
 
+	/**
+	 * Return a reference to the single class instance.
+	 */
 	public static function get_instance() {
 		return self::$instance;
 	}
 
+	/**
+	 * Create a table to store the achievement notifications.
+	 */
 	public function install() {
 		global $wpdb;
 
@@ -118,6 +124,10 @@ class WP_AchievementGet {
 		);
 	}
 
+	/**
+	 * Show the admin page, where we can view or clear achievements.
+	 * TODO: Add nonce.
+	 */
 	public function plugin_settings_page() {
 		global $wpdb;
 
@@ -145,7 +155,6 @@ class WP_AchievementGet {
 		}
 
 		$admin_only = get_option( 'achievement_get_admin_only', 0 );
-
 
 ?>
 
