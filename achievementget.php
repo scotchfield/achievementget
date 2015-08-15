@@ -21,6 +21,11 @@ class WP_AchievementGet {
 	private $post_cache = array();
 
 	/**
+	 * The table in which we store achievement notifications.
+	 */
+	private $table_name;
+
+	/**
 	 * The domain for localization.
 	 */
 	const DOMAIN = 'achievementget';
@@ -33,20 +38,28 @@ class WP_AchievementGet {
 	/**
 	 * Instantiate, if necessary, and add hooks.
 	 */
-	public function __construct() {
-		global $wpdb;
+	private function __construct() {
+		add_action( 'init', array( $this, 'init' ) );
+	}
 
-		if ( isset( self::$instance ) ) {
-			wp_die( esc_html__( 'The WP_AchievementGet class has already been instantiated.', self::DOMAIN ) );
+	/**
+	 * Return the single instance of our class.
+	 */
+	public static function get_instance() {
+		if ( ! isset( self::$instance ) ) {
+			self::$instance = new WP_AchievementGet();
 		}
 
-		self::$instance = $this;
+		return self::$instance;
+	}
+
+	public function init() {
+		global $wpdb;
 
 		$this->table_name = $wpdb->prefix . 'achievement_get';
 
 		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
-		add_action( 'init', array( $this, 'init' ), 1 );
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 
 		add_shortcode( 'achievement_award', array( $this, 'achievement_award' ) );
@@ -54,40 +67,7 @@ class WP_AchievementGet {
 		add_shortcode( 'achievement_points', array( $this, 'achievement_points' ) );
 
 		add_action( 'wp_ajax_hide_achievement_notify', array( $this, 'hide_achievement_notify' ) );
-	}
 
-	/**
-	 * Return a reference to the single class instance.
-	 */
-	public static function get_instance() {
-		return self::$instance;
-	}
-
-	/**
-	 * Create a table to store the achievement notifications.
-	 */
-	public function install() {
-		global $wpdb;
-
-		$charset_collate = $wpdb->get_charset_collate();
-
-		$sql = "CREATE TABLE " . $this->table_name . " (
-			id bigint(20) NOT NULL AUTO_INCREMENT,
-			user_id bigint(20) NOT NULL,
-			time TIMESTAMP NOT NULL,
-			seen BOOLEAN NOT NULL,
-			message TEXT NOT NULL,
-			UNIQUE KEY id (id)
-		) $charset_collate;";
-
-		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-		dbDelta( $sql );
-	}
-
-	/**
-	 * Initialize custom types.
-	 */
-	public function init() {
 		register_post_type(
 			self::CPT_ACHIEVEMENT,
 			array(
@@ -109,6 +89,27 @@ class WP_AchievementGet {
 				'rewrite' => true,
 			)
 		);
+	}
+
+	/**
+	 * Create a table to store the achievement notifications.
+	 */
+	public function install() {
+		global $wpdb;
+
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$sql = "CREATE TABLE " . $this->table_name . " (
+			id bigint(20) NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) NOT NULL,
+			time TIMESTAMP NOT NULL,
+			seen BOOLEAN NOT NULL,
+			message TEXT NOT NULL,
+			UNIQUE KEY id (id)
+		) $charset_collate;";
+
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		dbDelta( $sql );
 	}
 
 	/**
@@ -341,4 +342,4 @@ class WP_AchievementGet {
 
 }
 
-$wp_achievementget = new WP_AchievementGet();
+$wp_achievementget = WP_AchievementGet::get_instance();
