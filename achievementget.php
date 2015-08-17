@@ -23,7 +23,7 @@ class WP_AchievementGet {
 	/**
 	 * The table in which we store achievement notifications.
 	 */
-	private $table_name;
+	public $table_name;
 
 	/**
 	 * The domain for localization.
@@ -39,6 +39,8 @@ class WP_AchievementGet {
 	 * Instantiate, if necessary, and add hooks.
 	 */
 	private function __construct() {
+		register_activation_hook( __FILE__, array( $this, 'install' ) );
+
 		add_action( 'init', array( $this, 'init' ) );
 	}
 
@@ -57,8 +59,6 @@ class WP_AchievementGet {
 		global $wpdb;
 
 		$this->table_name = $wpdb->prefix . 'achievement_get';
-
-		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 
@@ -102,9 +102,9 @@ class WP_AchievementGet {
 		$sql = "CREATE TABLE " . $this->table_name . " (
 			id bigint(20) NOT NULL AUTO_INCREMENT,
 			user_id bigint(20) NOT NULL,
-			time TIMESTAMP NOT NULL,
-			seen BOOLEAN NOT NULL,
-			message TEXT NOT NULL,
+			time timestamp NOT NULL,
+			seen boolean NOT NULL,
+			message text NOT NULL,
 			UNIQUE KEY id (id)
 		) $charset_collate;";
 
