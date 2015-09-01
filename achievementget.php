@@ -116,7 +116,7 @@ class WP_AchievementGet {
 	 * Add menu options to the dashboard, and meta boxes to the edit pages.
 	 */
 	public function add_admin_menu() {
-		$page = add_options_page(
+		return add_options_page(
 			esc_html__( 'Achievement Get!', self::DOMAIN ),
 			esc_html__( 'Achievement Get!', self::DOMAIN ),
 			'manage_options',
