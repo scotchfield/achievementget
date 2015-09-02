@@ -67,4 +67,45 @@ class Test_AchievementGet extends WP_UnitTestCase {
 		$this->assertNotFalse( $this->class->add_admin_menu() );
 	}
 
+
+
+
+	/**
+	 * @covers WP_AchievementGet::get_achievement_points
+	 */
+	public function test_get_achievement_points_empty() {
+		$this->assertEquals( 0, $this->class->get_achievement_points( get_current_user_id() ) );
+	}
+
+	/**
+	 * @covers WP_AchievementGet::get_achievement_points
+	 */
+	public function test_get_achievement_points_new_user() {
+		$user = new WP_User( $this->factory->user->create() );
+		$old_user_id = get_current_user_id();
+		wp_set_current_user( $user->ID );
+
+		$this->assertEquals( 0, $this->class->get_achievement_points( get_current_user_id() ) );
+
+		wp_set_current_user( $old_user_id );
+	}
+
+	/**
+	 * @covers WP_AchievementGet::get_achievement_points
+	 * @covers WP_AchievementGet::set_achievement_points
+	 */
+	public function test_set_and_get_achievement_points_new() {
+		$user = new WP_User( $this->factory->user->create() );
+		$old_user_id = get_current_user_id();
+		wp_set_current_user( $user->ID );
+
+		$points = 123;
+
+		$this->class->set_achievement_points( get_current_user_id(), $points );
+
+		$this->assertEquals( $points, $this->class->get_achievement_points( get_current_user_id() ) );
+
+		wp_set_current_user( $old_user_id );
+	}
+
 }
