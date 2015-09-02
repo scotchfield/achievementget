@@ -60,4 +60,11 @@ class Test_AchievementGet extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * @covers WP_AchievementGet::add_admin_menu
+	 */
+	public function test_add_admin_menu() {
+		$this->assertNotFalse( $this->class->add_admin_menu() );
+	}
+
 }
